@@ -11,7 +11,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/bnagy/crashwalk/crash"
+	"github.com/skirge/crashwalk/crash"
 	"io"
 	"io/ioutil"
 	"log"
@@ -156,8 +156,24 @@ GDB OUTPUT:
 	panic(fmt.Sprintf("%s %s\nCOMMAND:\n%s\n", s, string(raw), cmd))
 }
 
+func extractHexValue(hexAddress string) string {
+	// Define a regular expression to match the hex value
+	re := regexp.MustCompile(`0x([0-9a-fA-F]+)[\s:]*`)
+
+	// Find the submatch in the input string
+	match := re.FindStringSubmatch(hexAddress)
+	if len(match) < 2 {
+		return "F00FF00F"
+	}
+
+	// Extract the hex value from the submatch
+	hexValue := match[1]
+
+	return hexValue
+}
+
 func mustParseHex(s string, die func()) (n uint64) {
-	n, err := strconv.ParseUint(s, 0, 64)
+	n, err := strconv.ParseUint(s, 16, 64)
 	if err != nil {
 		die()
 	}
@@ -207,7 +223,7 @@ func parseExploitable(raw []byte, ci *crash.Info, die func()) {
 
 	ci.FaultingFrame = crash.StackEntry{
 		Symbol:  strings.Join(ff[4:atIdx], " "),
-		Address: mustParseHex(ff[atIdx+1], die),
+		Address: mustParseHex(extractHexValue(ff[atIdx+1]), die),
 		// don't know if modules can ever contain spaces?
 		Module: strings.Join(ff[atIdx+3:], " "),
 	}
@@ -261,8 +277,8 @@ func parseDisasm(raw []byte, die func()) (crash.Instruction, []crash.Instruction
 
 		if ff[0] == "=>" {
 			fault = crash.Instruction{
-				Address: mustParseHex(ff[1], die),
-				Text:    strings.Join(ff[3:], " "),
+				Address: mustParseHex(extractHexValue(ff[1]), die),
+				Text:    strings.Join(ff[2:], " "),
 			}
 			disasm = append(disasm, fault)
 			continue
@@ -271,8 +287,8 @@ func parseDisasm(raw []byte, die func()) (crash.Instruction, []crash.Instruction
 		disasm = append(
 			disasm,
 			crash.Instruction{
-				Address: mustParseHex(ff[0], die),
-				Text:    strings.Join(ff[2:], " "),
+                Address: mustParseHex(extractHexValue(ff[0]), die),
+				Text:    strings.Join(ff[1:], " "),
 			},
 		)
 
@@ -295,7 +311,7 @@ func parseRegisters(raw []byte, die func()) (registers []crash.Register) {
 			registers,
 			crash.Register{
 				Name:  ff[0],
-				Value: mustParseHex(ff[1], die),
+				Value: mustParseHex(extractHexValue(ff[1]), die),
 			},
 		)
 	}
@@ -335,7 +351,7 @@ func parseStack(raw []byte, die func()) (stack []crash.StackEntry) {
 		var found bool
 		for _, s := range ff {
 			if strings.HasPrefix(s, "0x") {
-				address = mustParseHex(s, die)
+				address = mustParseHex(extractHexValue(s), die)
 				found = true
 			}
 		}

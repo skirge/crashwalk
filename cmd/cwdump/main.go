@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/bnagy/crashwalk"
-	"github.com/bnagy/crashwalk/crash"
+	"github.com/skirge/crashwalk"
+	"github.com/skirge/crashwalk/crash"
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
 	"log"
