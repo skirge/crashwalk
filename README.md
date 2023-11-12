@@ -117,7 +117,7 @@ install Go, if you haven't already done so.
 
 Now, install crashwalk:
 ```bash
-$ go get -u github.com/bnagy/crashwalk/cmd/...
+$ go install github.com/skirge/crashwalk/cmd/...@latest
 ```
 
 The binaries produced are statically linked (Go just does that), so you can 'deploy' to other systems, docker containers etc by just copying them.
